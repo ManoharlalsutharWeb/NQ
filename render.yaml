@@ -14,3 +14,5 @@ services:
         sync: false
       - key: DB_PATH
         value: /tmp/nq_impact.db
+      - key: CACHE_SECONDS
+        value: "20"

@@ -1,37 +1,76 @@
-# NQ Impact — Real Event Engine
+# NQ IMPACT — REAL EVENT ENGINE (REBUILD)
 
-This build is deliberately **not a demo**. It contains no hard-coded weekly economic values and does not fabricate live prices.
+## IMPORTANT
+The GitHub Pages frontend is now the ROOT `index.html`.
+It calls the Render backend explicitly:
+`https://nq-w7mk.onrender.com`
 
-## Live data providers
+The previous failure happened because a GitHub Pages page used a relative `/api/calendar` request. GitHub Pages returned an HTML 404 page, and the browser then tried to parse that HTML as JSON (`Unexpected token '<'`). This build uses an absolute backend URL and explicitly reports non-JSON responses.
 
-- Trading Economics Calendar: real event date/time, Actual, Previous, Forecast, revisions and importance. The provider documents country/date calendar endpoints and these fields.
-- Massive Futures API: optional live futures snapshot/historical futures bars. Set `MASSIVE_API_KEY` and the active `NQ_TICKER`.
-- The Event Impact Engine is reusable: event rules are permanent, while the week's Forecast/Previous/Actual come from the live calendar.
+## Structure
 
-## Required environment variables
+NQ/
+- index.html              <- upload this at repository root for GitHub Pages
+- app.py                  <- Render backend
+- requirements.txt
+- render.yaml
+- README.md
 
-`TRADING_ECONOMICS_KEY` — required for live economic calendar.
-`MASSIVE_API_KEY` — required for live futures market data.
-`NQ_TICKER` — the active Nasdaq-100 E-mini futures contract identifier for your market-data plan.
+A `templates/` copy is not required for the GitHub frontend. Flask serves the root index too.
 
-Do not put API keys inside `index.html`.
+## LIVE PROVIDERS
 
-## Run
+### Economic calendar
+`TRADING_ECONOMICS_KEY` is required.
 
-```bash
-pip install -r requirements.txt
-export TRADING_ECONOMICS_KEY="..."
-export MASSIVE_API_KEY="..."
-export NQ_TICKER="..."
-python app.py
-```
+Trading Economics documents the calendar fields Actual, Previous, Forecast, revisions, importance and release time. It is the source for the weekly real event values. The event rule library in this project is separate and does not contain weekly values.
 
-For Render, use `render.yaml` and enter the same values as secret environment variables.
+### NQ futures
+`MASSIVE_API_KEY` and `NQ_TICKER` are required for the futures snapshot. Massive documents `/futures/v1/snapshot` and `/futures/v1/aggs/{ticker}`.
 
-## Truthfulness rule
+### News
+GDELT DOC 2.0 is used for keyless news context. News is not used as a replacement for the economic calendar.
 
-If an API is unavailable or a key is missing, the dashboard says OFFLINE / WAITING. It does not replace missing live data with demo numbers.
+## RENDER ENVIRONMENT
 
-## Historical engine
+Set:
+TRADING_ECONOMICS_KEY=your_real_key
+MASSIVE_API_KEY=your_real_key
+NQ_TICKER=the_active_NQ_contract_for_your_plan
 
-The UI reserves the historical reaction layer. Real historical hit-rates should only be populated after pairing real calendar releases with real NQ bars (1m/5m/15m/30m/1h). No synthetic statistics are inserted.
+Never put these keys in index.html or GitHub.
+
+## FIRST DEPLOYMENT CHECK
+
+Open:
+https://nq-w7mk.onrender.com/api/health
+
+It must return JSON with:
+ok: true
+calendar_configured: true
+market_configured: true
+
+Then open:
+https://nq-w7mk.onrender.com/api/calendar
+
+It must return JSON with:
+live: true
+events: [...]
+
+If the key is missing, the endpoint intentionally returns a JSON error instead of fake data.
+
+## GITHUB PAGES
+
+Upload ROOT `index.html` to:
+https://manoharlalsutharweb.github.io/NQ/
+
+The browser frontend will call the Render backend automatically.
+
+## LOGIN
+Username: admin
+Password: Guruji@1379
+
+For production, change the password mechanism before public sharing. This browser gate is not a substitute for server-side authentication.
+
+## HISTORICAL ENGINE
+No synthetic historical probabilities are included. To calculate real hit rates, store actual release records alongside NQ bars at 1m/5m/15m/30m/60m and calculate outcomes from those observations.
