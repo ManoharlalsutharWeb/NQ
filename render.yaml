@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: nq-impact-real-engine
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: TRADING_ECONOMICS_KEY
+        sync: false
+      - key: MASSIVE_API_KEY
+        sync: false
+      - key: NQ_TICKER
+        sync: false
+      - key: DB_PATH
+        value: /tmp/nq_impact.db
